@@ -1,0 +1,168 @@
+from abc import ABC, abstractmethod
+from datetime import datetime
+
+
+class Szoba(ABC):
+    def __init__(self, szobaszam, ar):
+        self.szobaszam = szobaszam
+        self.ar = ar
+        self.foglalt_datumok = []
+
+    @abstractmethod
+    def osszeg(self):
+        pass
+
+    def foglal(self, datum):
+        if datum >= datetime.now().strftime('%Y-%m-%d'):
+            if datum not in self.foglalt_datumok:
+                self.foglalt_datumok.append(datum)
+                return True
+            else:
+                print("A szoba már foglalt ezen a dátumon.")
+                return False
+        else:
+            print("A megadott dátum már elmúlt.")
+            return False
+
+    def lemondas(self, datum):
+        if datum in self.foglalt_datumok:
+            self.foglalt_datumok.remove(datum)
+            print("A foglalás lemondva a(z)", datum, "dátumra.")
+            return True
+        else:
+            print("Nincs foglalás ezen a dátumon.")
+            return False
+
+    def listaz_foglalasok(self):
+        if self.foglalt_datumok:
+            print("Foglalások a(z)", self.szobaszam, "szobában:")
+            for datum in self.foglalt_datumok:
+                print("-", datum)
+        else:
+            print("Nincs foglalás a(z)", self.szobaszam, "szobában.")
+
+
+class EgyagyasSzoba(Szoba):
+    def __init__(self, szobaszam, ar, egyagyasag_ar, wifi=False):
+        super().__init__(szobaszam, ar)
+        self.egyagyasag_ar = egyagyasag_ar
+        self.wifi = wifi
+
+    def osszeg(self):
+        osszeg = self.ar + self.egyagyasag_ar
+        if self.wifi:
+            osszeg += 10
+        return osszeg
+
+
+class KetagyasSzoba(Szoba):
+    def __init__(self, szobaszam, ar, ketagyas_ar, erkely=False):
+        super().__init__(szobaszam, ar)
+        self.ketagyas_ar = ketagyas_ar
+        self.erkely = erkely
+
+    def osszeg(self):
+        osszeg = self.ar + self.ketagyas_ar
+        if self.erkely:
+            osszeg += 20
+        return osszeg
+
+
+class Szalloda:
+    def __init__(self, nev):
+        self.nev = nev
+        self.szobak_egyagyas = []
+        self.szobak_ketagyas = []
+
+    def add_szoba_egyagyas(self, szoba):
+        self.szobak_egyagyas.append(szoba)
+
+    def add_szoba_ketagyas(self, szoba):
+        self.szobak_ketagyas.append(szoba)
+
+    def foglal_szoba(self, datum):
+        print("Elérhető egyágyas szobák:")
+        for szoba in self.szobak_egyagyas:
+            if datum not in szoba.foglalt_datumok:
+                print("- Szobaszám:", szoba.szobaszam, "| Ár:", szoba.osszeg())
+        print("Elérhető kétágyas szobák:")
+        for szoba in self.szobak_ketagyas:
+            if datum not in szoba.foglalt_datumok:
+                print("- Szobaszám:", szoba.szobaszam, "| Ár:", szoba.osszeg())
+
+        szobaszam = input("Adja meg a foglalni kívánt szoba számát: ")
+        for szoba in self.szobak_egyagyas:
+            if szoba.szobaszam == szobaszam:
+                return szoba.foglal(datum)
+        for szoba in self.szobak_ketagyas:
+            if szoba.szobaszam == szobaszam:
+                return szoba.foglal(datum)
+        print("Nincs ilyen szobaszámú szoba a szállodában.")
+        return False
+
+    def lemondas_szoba(self, datum):
+        szobaszam = input("Adja meg a lemondani kívánt foglalás szoba számát: ")
+        for szoba in self.szobak_egyagyas:
+            if szoba.szobaszam == szobaszam:
+                return szoba.lemondas(datum)
+        for szoba in self.szobak_ketagyas:
+            if szoba.szobaszam == szobaszam:
+                return szoba.lemondas(datum)
+        print("Nincs ilyen szobaszámú szoba a szállodában.")
+        return False
+
+    def listaz_foglalasok(self):
+        print("Foglalások a", self.nev, "szállodában:")
+        for szoba in self.szobak_egyagyas:
+            szoba.listaz_foglalasok()
+        for szoba in self.szobak_ketagyas:
+            szoba.listaz_foglalasok()
+
+
+def feltolt_szalloda():
+    szalloda = Szalloda("Példa Szálloda")
+
+    szoba1 = EgyagyasSzoba("101", 50, 20, True)
+    szoba2 = KetagyasSzoba("201", 80, 30)
+    szoba3 = EgyagyasSzoba("102", 60, 25, True)
+
+    szalloda.add_szoba_egyagyas(szoba1)
+    szalloda.add_szoba_ketagyas(szoba2)
+    szalloda.add_szoba_egyagyas(szoba3)
+
+    szoba1.foglal("2024-05-10")
+    szoba1.foglal("2024-05-12")
+    szoba2.foglal("2024-05-11")
+    szoba2.foglal("2024-05-13")
+    szoba3.foglal("2024-05-12")
+
+    return szalloda
+
+
+def main():
+    szalloda = feltolt_szalloda()
+
+    while True:
+        print("\n1. Foglalás")
+        print("2. Lemondás")
+        print("3. Foglalások listázása")
+        print("4. Kilépés")
+
+        valasztas = input("Válasszon egy műveletet: ")
+
+        if valasztas == "1":
+            datum = input("Adja meg a foglalás dátumát (pl. 2024-05-10): ")
+            szalloda.foglal_szoba(datum)
+        elif valasztas == "2":
+            datum = input("Adja meg a lemondani kívánt foglalás dátumát: ")
+            szalloda.lemondas_szoba(datum)
+        elif valasztas == "3":
+            szalloda.listaz_foglalasok()
+        elif valasztas == "4":
+            break
+        else:
+            print("Hibás választás. Kérem, válasszon újra.")
+
+
+if __name__ == "__main__":
+    main()
